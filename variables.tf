@@ -41,6 +41,11 @@ variable "storage_mode_type" {
   type        = string
   description = "Storage type of the Recovery Services Vault. Must be one of 'GeoRedundant', 'LocallyRedundant' or 'ZoneRedundant'."
   default     = "GeoRedundant"
+
+  validation {
+    condition     = contains(["GeoRedundant", "LocallyRedundant", "ZoneRedundant"], var.storage_mode_type)
+    error_message = "var.storage_mode_type must be one of 'GeoRedundant', 'LocallyRedundant' or 'ZoneRedundant'"
+  }
 }
 
 variable "cross_region_restore_enabled" {
@@ -59,6 +64,7 @@ variable "rsv_alerts_for_all_job_failures_enabled" {
 variable "rsv_alerts_for_critical_operation_failures_enabled" {
   type        = bool
   description = "Enabling/Disabling alerts from the older (classic alerts) solution. More details could be found [here](https://learn.microsoft.com/en-us/azure/backup/monitoring-and-alerts-overview)."
+  default     = true
 }
 
 variable "backup_policies" {
