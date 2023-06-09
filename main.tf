@@ -20,7 +20,7 @@ resource "azurerm_recovery_services_vault" "vault" {
 
 
 resource "azurerm_backup_policy_vm" "backup_policy" {
-  for_each                       = var.backup_policy
+  for_each                       = var.backup_policies
   name                           = each.key
   resource_group_name            = azurerm_recovery_services_vault.vault.resource_group_name
   recovery_vault_name            = azurerm_recovery_services_vault.vault.name
@@ -65,13 +65,13 @@ resource "azurerm_backup_policy_vm" "backup_policy" {
 }
 
 locals {
-  flattened_list_of_vms_and_policies = merge([for policy_name, value in var.protected_virtual_machine_ids : { for vm_id in value : vm_id => policy_name }]...) # Only supports one backup policy assignment per VM
+  flattened_list_of_vms_and_policies = flatten([for policy_name, policy_object in var.backup_policies : [for vm_name in policy_object : "${policy_name}|${vm_name}"]])
 }
 
 resource "azurerm_backup_protected_vm" "backup_vms" {
-  for_each            = local.flattened_list_of_vms_and_policies
+  for_each            = toset(local.flattened_list_of_vms_and_policies)
   resource_group_name = azurerm_recovery_services_vault.vault.resource_group_name
   recovery_vault_name = azurerm_recovery_services_vault.vault.name
-  source_vm_id        = each.key
-  backup_policy_id    = azurerm_backup_policy_vm.backup_policy[each.value].id
+  source_vm_id        = split("|", each.key)[1]
+  backup_policy_id    = azurerm_backup_policy_vm.backup_policy[split("|", each.key)[0]].id
 }

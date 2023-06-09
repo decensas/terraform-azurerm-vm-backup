@@ -61,8 +61,8 @@ variable "rsv_alerts_for_critical_operation_failures_enabled" {
   description = "Enabling/Disabling alerts from the older (classic alerts) solution. More details could be found [here](https://learn.microsoft.com/en-us/azure/backup/monitoring-and-alerts-overview)."
 }
 
-variable "backup_policy" {
-  description = "A list of network interface IDs to attach to the VM."
+variable "backup_policies" {
+  description = "A map of backup policy objects where the key is the name of the policy."
   type = map(object({
     timezone                       = optional(string, "UTC") # [Allowed values](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/)
     backup_time                    = string                  # Time of day to perform backup in 24h format, e.g. 23:00
@@ -92,14 +92,8 @@ variable "backup_policy" {
       yearly_include_last_days = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. 
 
     }))
-    protected_virtual_machine_ids = optional(list(string)) # this element is option two
+    protected_virtual_machine_ids = optional(list(string))
   }))
-}
-
-variable "protected_virtual_machine_ids" {
-  type        = map(list(string))
-  description = "(Optional) A map of backup policies mapped to virtual machine IDs. The key is backup policy name while the value is a list of virtual machine IDs. Will assign VMs a backup policy directly." # this variable is option one
-  default     = {}
 }
 
 variable "azure_policy_id" {
