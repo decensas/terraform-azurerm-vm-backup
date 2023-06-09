@@ -5,10 +5,13 @@ Terraform module for management of Azure Virtual Machine backup. Supports creati
 Here are some short examples with referenced resources cut out. See [examples](./examples)-directory for full examples.
 
 ### Directly assigned backup policies 
-This example features the deployment of two backup policies ´default_policy´ and ´daily_backup´. 
-´default_policy´ is run weekly on Fridays and is assigned all virtual machines.
-´daily_backup´ is run daily and is assigned only virtual machine number 2.
+This example features the deployment of two backup policies `default_policy` and `daily_backup`. 
 
+`default_policy` is run weekly on Fridays and is assigned all virtual machines.
+
+`daily_backup` is run daily and is assigned only virtual machine number 2.
+
+See full example [here](./examples/directly-assigned-backup-policies).
 ```terraform
 module "backup" {
   source  = "decensas/azure-virtual-machine-backup/azurerm"
