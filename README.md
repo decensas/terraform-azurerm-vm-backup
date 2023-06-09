@@ -64,8 +64,8 @@ No modules.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_policy"></a> [policy](#output\_policy) | n/a |
-| <a name="output_vault"></a> [vault](#output\_vault) | n/a |
+| <a name="output_policy"></a> [policy](#output\_policy) | A map of backup policy objects created by this module. |
+| <a name="output_vault"></a> [vault](#output\_vault) | Recovery Services Vault object created by this module. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
 
