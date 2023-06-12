@@ -28,7 +28,7 @@ module "backup" {
         weekly_backups_retention = 20 # retains 20 weekly backups at a time
         weekdays                 = ["Friday"]
       }
-      protected_virtual_machines = [azurerm_windows_virtual_machine.main[1], azurerm_windows_virtual_machine.main[3]]
+      protected_virtual_machines = azurerm_windows_virtual_machine.compute
     }
 
     daily_backup = {
@@ -39,7 +39,7 @@ module "backup" {
         daily_backups_retention = 10 # Retains 10 daily backups at a time
       }
 
-      protected_virtual_machines = [azurerm_windows_virtual_machine.main[2]]
+      protected_virtual_machines = azurerm_windows_virtual_machine.database
     }
   }
 
