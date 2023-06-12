@@ -10,7 +10,7 @@ resource "azurerm_recovery_services_vault" "vault" {
   soft_delete_enabled           = var.soft_delete_enabled
 
   dynamic "identity" {
-    for_each = var.identity != null ? [""] : []
+    for_each = var.encryption_with_cmk || var.public_network_access_enabled ? [""] : []
     content {
       type         = var.identity
       identity_ids = var.identity_ids
@@ -18,7 +18,7 @@ resource "azurerm_recovery_services_vault" "vault" {
   }
 
   dynamic "encryption" {
-    for_each = var.encryption_with_cmk != null ? [""] : []
+    for_each = var.encryption_with_cmk ? [""] : []
     content {
       key_id                            = var.key_vault_key_id
       infrastructure_encryption_enabled = var.infrastructure_encryption_enabled

@@ -8,6 +8,7 @@ variable "location" {
   type        = string
 }
 
+## Recovery Services Vault configuration
 variable "recovery_services_vault_name" {
   type        = string
   description = "Name of Recovery Services Vault where backups will be stored."
@@ -54,10 +55,11 @@ variable "cross_region_restore_enabled" {
   default     = false
 }
 
+### Recovery Services Vault identity configuration
 variable "identity" {
   type        = string
-  description = "What identity to enable for the Recovery Service Vault. The identity is used when using Customer Managed Key (CMK for encryption) or accessing the vault using Private Endpoints. Available options are: 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'"
-  default     = null
+  description = "What identity to enable for the Recovery Service Vault. The identity is used when using Customer Managed Key (CMK for encryption) or accessing the vault using Private Endpoints. Available options are: 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'. Required if encryption_with_cmk is enabled."
+  default     = "SystemAssigned"
 
   validation {
     condition     = contains(["SystemAssigned", "UserAssigned", "SystemAssigned, UserAssigned"], coalesce(var.identity, "SystemAssigned"))
@@ -71,6 +73,7 @@ variable "identity_ids" {
   default     = null
 }
 
+### Recovery Services Vault Customer Managed Key encryption configuration
 variable "encryption_with_cmk" {
   type        = bool
   description = "Whether to manage encryption using Customer Managed Key (CMK) provisioned with var.key_vault_key_id. Relevant documentation: https://learn.microsoft.com/en-us/azure/backup/backup-encryption"
@@ -95,6 +98,7 @@ variable "user_assigned_identity_id_encryption" {
   default     = null
 }
 
+### Recovery Services Vault monitoring configuration
 variable "rsv_alerts_for_all_job_failures_enabled" {
   type        = bool
   description = "Enabling/Disabling built-in Azure Monitor alerts for security scenarios and job failure scenarios. More details could be found [here](https://learn.microsoft.com/en-us/azure/backup/monitoring-and-alerts-overview)."
@@ -107,6 +111,7 @@ variable "rsv_alerts_for_critical_operation_failures_enabled" {
   default     = true
 }
 
+## Backup policy and direct assignment configuration
 variable "backup_policies" {
   description = "A map of backup policy objects where the key is the name of the policy."
   type = map(object({
@@ -144,6 +149,13 @@ variable "backup_policies" {
   }))
 }
 
+## Azure Policy configuration so to assign backup policies dynamically 
+variable "enable_dynamic_backup_policy_assignment" {
+  type        = bool
+  description = "Whether to enable dynamic backup policy to VMs using Azure Policy and tags"
+  default     = false
+}
+
 variable "azure_policy_id" {
   type        = string
   description = "(Optional) ID of Azure policy to use for automatically assignment of backup policies to VMs based on tags."
@@ -151,20 +163,9 @@ variable "azure_policy_id" {
 }
 
 variable "azure_policy_scope" {
-  type        = string
-  description = "(Optional) What scope to assign an Azure policy to assign backup policies to VMs on. Must be one of 'management_group', 'subscription' or 'resource_group'"
-  default     = "subscription"
-
-  validation {
-    condition     = contains(["management_group", "subscription", "resource_group"], var.azure_policy_scope)
-    error_message = "The scope must be either of 'management_group', 'subscription' or 'resource_group'"
-  }
-}
-
-variable "azure_policy_scope_id" { # azure_policy_scope and this one should be combined
-  type        = string
-  description = "(Optional) ID of scope specified within var.azure_policy_scope. Required if var.azure_policy_scope is set."
-  default     = ""
+  type        = map(string)
+  description = "(Optional) What scope to assign an Azure policy to assign backup policies to VMs on and the ID of the scope. The key be one of 'management_group', 'subscription' or 'resource_group' and the value is the ID of the scope"
+  default     = {}
 }
 
 variable "tag_key" {
