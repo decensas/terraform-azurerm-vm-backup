@@ -36,6 +36,29 @@ resource "azurerm_recovery_services_vault" "vault" {
   tags = var.tags
 }
 
+resource "azurerm_private_endpoint" "backup" {
+  count               = var.manage_private_endpoint ? 1 : 0
+  name                = "${var.recovery_services_vault_name}-endpoint"
+  location            = azurerm_recovery_services_vault.vault.location
+  resource_group_name = azurerm_recovery_services_vault.vault.resource_group_name
+  subnet_id           = var.private_endpoint_subnet_id
+
+  private_service_connection {
+    name                           = "${var.recovery_services_vault_name}-connection"
+    private_connection_resource_id = azurerm_recovery_services_vault.vault.id
+    subresource_names              = ["AzureBackup"]
+    is_manual_connection           = false
+  }
+
+  dynamic "private_dns_zone_group" {
+    for_each = var.manage_dns_zone ? [""] : []
+    content {
+      name                 = var.private_dns_zone_group_name
+      private_dns_zone_ids = var.private_dns_zone_ids
+    }
+  }
+}
+
 resource "azurerm_backup_policy_vm" "backup_policy" {
   for_each                       = var.backup_policies
   name                           = each.key

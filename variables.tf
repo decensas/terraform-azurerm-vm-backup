@@ -32,6 +32,36 @@ variable "public_network_access_enabled" {
   default     = false
 }
 
+variable "manage_private_endpoint" {
+  type        = bool
+  description = "Whether this module will manage a private endpoint for the Recovery Service Vault"
+  default     = false
+}
+
+variable "private_endpoint_subnet_id" {
+  type        = string
+  description = "Subnet ID of subnet to deploy Private Endpoint in. Required if public_network_access_enabled is diabled"
+  default     = null
+}
+
+variable "manage_dns_zone" {
+  type        = bool
+  description = "Whether to manage private DNS zone or not for Recovery Services Vault"
+  default     = true
+}
+
+variable "private_dns_zone_group_name" {
+  type        = string
+  description = "Name of Azure Private DNS zone group for resolving private endpoint. Only relevant if var.private_endpoint_subnet_id is set"
+  default     = "backup-dns-zone"
+}
+
+variable "private_dns_zone_ids" {
+  type        = list(string)
+  description = "A list of private DNS zone IDs to add DNS entry to. Required if var.manage_dns_zone is true"
+  default     = []
+}
+
 variable "soft_delete_enabled" {
   type        = bool
   description = "Whether to enable soft delete on Recovery Services Vault"
@@ -56,9 +86,9 @@ variable "cross_region_restore_enabled" {
 }
 
 variable "immutability" {
-  type        = bool
-  description = "Whether you want vault to be immutable. Review https://learn.microsoft.com/en-us/azure/backup/backup-azure-immutable-vault-concept?tabs=recovery-services-vault"
-  default     = false
+  type        = string
+  description = "Whether you want vault to be immutable. Allowed values are: 'Locked', 'Unlocked' or 'Disabled'. Review https://learn.microsoft.com/en-us/azure/backup/backup-azure-immutable-vault-concept?tabs=recovery-services-vault"
+  default     = null
 }
 
 ### Recovery Services Vault identity configuration
