@@ -154,7 +154,7 @@ variable "rsv_alerts_for_critical_operation_failures_enabled" {
 
 ## Backup policy and direct assignment configuration
 variable "backup_policies" {
-  description = "A map of backup policy objects where the key is the name of the policy."
+  description = "A map of backup policy objects where the key is the name of the policy. [Review](#var.backup_policies) for comprehensive documentation"
   type = map(object({
     timezone                       = optional(string, "UTC") # [Allowed values](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/)
     backup_time                    = string                  # Time of day to perform backup in 24h format, e.g. 23:00
