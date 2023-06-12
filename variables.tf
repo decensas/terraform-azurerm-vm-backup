@@ -28,7 +28,7 @@ variable "sku" {
 
 variable "public_network_access_enabled" {
   type        = bool
-  description = "Enable access to Recovery Services Vault from public networks or not."
+  description = "Enable access to Recovery Services Vault from public networks or not. Requires configuration of a Private Endpoint and DNS resolve for backup operations and vault access."
   default     = false
 }
 
@@ -52,6 +52,12 @@ variable "storage_mode_type" {
 variable "cross_region_restore_enabled" {
   type        = bool
   description = "Whether to enable cross region restore for Recovery Services Vault. For this to be true var.storage_mode_type must be set to GeoRedundant"
+  default     = false
+}
+
+variable "immutability" {
+  type        = bool
+  description = "Whether you want vault to be immutable. Review https://learn.microsoft.com/en-us/azure/backup/backup-azure-immutable-vault-concept?tabs=recovery-services-vault"
   default     = false
 }
 

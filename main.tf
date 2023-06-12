@@ -8,6 +8,7 @@ resource "azurerm_recovery_services_vault" "vault" {
   storage_mode_type             = var.storage_mode_type
   cross_region_restore_enabled  = var.cross_region_restore_enabled
   soft_delete_enabled           = var.soft_delete_enabled
+  immutability                  = var.immutability
 
   dynamic "identity" {
     for_each = var.encryption_with_cmk || !var.public_network_access_enabled ? [""] : []
