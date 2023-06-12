@@ -3,7 +3,7 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "backup_location" {
+variable "location" {
   description = "Name of location to where backups will be stored"
   type        = string
 }
@@ -54,6 +54,23 @@ variable "cross_region_restore_enabled" {
   default     = false
 }
 
+variable "identity" {
+  type        = string
+  description = "What identity to enable for the Recovery Service Vault. The identity is used when using Customer Managed Key (CMK for encryption) or accessing the vault using Private Endpoints. Available options are: 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'"
+  default     = null
+
+  validation {
+    condition     = contains(["SystemAssigned", "UserAssigned", "SystemAssigned, UserAssigned"], coalesce(var.identity, "SystemAssigned"))
+    error_message = "var.identity must be one of: 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'"
+  }
+}
+
+variable "identity_ids" {
+  type        = list(string)
+  description = "List of User Assigned Managed Identity IDs to be used by the Recovery Services Vault. Only relevant if var.identity is set to either 'SystemAssigned' or 'SystemAssigned, UserAssigned'."
+  default     = null
+}
+
 
 variable "rsv_alerts_for_all_job_failures_enabled" {
   type        = bool
@@ -77,7 +94,6 @@ variable "backup_policies" {
     instant_restore_retention_days = optional(number)        # Between 1-5 for var.policy_type V1, 1-30 for V2
     backup_hour_interval           = optional(number)        # Interval of which backup is triggered. Allowed values are: 4, 6, 8 or 12. Used if backup_frequency is set to Hourly.
     backup_hour_duration           = optional(number)        # Duration of the backup window in hours. Value between 4 and 24. Used if backup_frequency is Hourly. Must be a multiplier of backup_hour_interval
-    backup_weekdays                = optional(list(string))  # List of Days in the week to perform backup. Only used when backup_frequency is set to Weekly.
     retention = optional(object({
       daily_backups_retention = optional(number) # Number of daily backups to retain, must be between 7-9999. Required if backup_frequency is Daily
 
@@ -98,7 +114,10 @@ variable "backup_policies" {
       yearly_include_last_days = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. 
 
     }))
-    protected_virtual_machine_ids = optional(list(string))
+    protected_virtual_machines = optional(list(object({
+      name = string
+      id   = string
+    })))
   }))
 }
 
