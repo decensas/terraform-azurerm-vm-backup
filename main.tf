@@ -17,6 +17,16 @@ resource "azurerm_recovery_services_vault" "vault" {
     }
   }
 
+  dynamic "encryption" {
+    for_each = var.encryption_with_cmk != null ? [""] : []
+    content {
+      key_id                            = var.key_vault_key_id
+      infrastructure_encryption_enabled = var.infrastructure_encryption_enabled
+      user_assigned_identity_id         = var.user_assigned_identity_id_encryption
+      use_system_assigned_identity      = var.user_assigned_identity_id_encryption == null ? true : false
+    }
+  }
+
   monitoring {
     alerts_for_all_job_failures_enabled            = var.rsv_alerts_for_all_job_failures_enabled
     alerts_for_critical_operation_failures_enabled = var.rsv_alerts_for_critical_operation_failures_enabled
@@ -98,3 +108,4 @@ resource "azurerm_backup_protected_vm" "backup_vms" {
   source_vm_id        = each.value.vm_id
   backup_policy_id    = azurerm_backup_policy_vm.backup_policy[each.value.backup_policy_name].id
 }
+

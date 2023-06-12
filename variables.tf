@@ -71,6 +71,29 @@ variable "identity_ids" {
   default     = null
 }
 
+variable "encryption_with_cmk" {
+  type        = bool
+  description = "Whether to manage encryption using Customer Managed Key (CMK) provisioned with var.key_vault_key_id. Relevant documentation: https://learn.microsoft.com/en-us/azure/backup/backup-encryption"
+  default     = false
+}
+
+variable "key_vault_key_id" {
+  type        = string
+  description = "ID of key within Azure Key Vault. This should be the Customer Managed Key (CMK)"
+  default     = null
+}
+
+variable "infrastructure_encryption_enabled" {
+  type        = bool
+  description = "Whether to add an additional layer of encryption on the storage infrastructure"
+  default     = false
+}
+
+variable "user_assigned_identity_id_encryption" {
+  type        = string
+  description = "User assigned ID to be used for additional encryption. Only relevant if var.encryption_with_cmk is enabled. System Assigned Identity for the Recovery Services Vault is used if no value is provided."
+  default     = null
+}
 
 variable "rsv_alerts_for_all_job_failures_enabled" {
   type        = bool
