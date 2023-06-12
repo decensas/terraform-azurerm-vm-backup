@@ -11,7 +11,7 @@ resource "azurerm_recovery_services_vault" "vault" {
   immutability                  = var.immutability
 
   dynamic "identity" {
-    for_each = var.encryption_with_cmk || !var.public_network_access_enabled ? [""] : []
+    for_each = var.encryption_with_cmk ? [""] : []
     content {
       type         = var.identity
       identity_ids = var.identity_ids
