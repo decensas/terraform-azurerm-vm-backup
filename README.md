@@ -118,11 +118,49 @@ No modules.
 | <a name="output_vault"></a> [vault](#output\_vault) | Recovery Services Vault object created by this module. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
+## var.backup_policy
 
-## Roadmap
+`var.backup_policy` is a complex structure and require additional documentation.
+The outer layer is a key-value map where the key is the name of the backup policy and its value is a complex object describing the policy and its assignees.
+
+```terraform
+<policy_name> => { <policy_configuration> }
+```
+
+### Backup policy configuration
+The backup policy configuration options are as follows:
+
+| Name | Type | Description | Default | Required |
+|---|---|---|---|---|
+| timezone | `string` | [Allowed values](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/) | "UTC" | Optional |
+| backup_time |  `string` | Time of day to perform backup in 24h format, e.g. 23:00 | n/a | Required |
+| backup_frequency | `string` | Frequency of backup, supported values 'Hourly', 'Daily', 'Weekly' | n/a | Required |
+| policy_type | `string` | Available values are 'V1' or 'V2', [Review](https://learn.microsoft.com/en-us/azure/backup/backup-azure-vms-enhanced-policy?tabs=azure-portal) | n/a | Optional |
+| instant_restore_retention_days | `number` | Between 1-5 for var.policy_type V1, 1-30 for V2 | n/a | Optional |
+| backup_hour_interval | `number` | Interval of which backup is triggered. Allowed values are: 4, 6, 8 or 12. Used if backup_frequency is set to Hourly. | n/a | Optional |
+| backup_hour_duration | `number` | Duration of the backup window in hours. Value between 4 and 24. Used if backup_frequency is Hourly. Must be a multiplier of backup_hour_interval | n/a | Optional |
+| protected_virtual_machines | <pre>map(object({<br>  name = string<br>  id   = string<br>})</pre> | A map describing which VMs to assign backup policy to. The key should describe the VM e.g. its name, avoid retrieving the value from an Azure Resource to avoid dependency issues. The value is an object containing VM name and ID | n/a | Optional |
+| retention | <pre>object({\<attributes\>})</pre> | Describing retention settings for the policy. | n/a | Optional |
 
 
-- Support assignment of backup policies using a tag based strategy with Azure policies
-- Support encryption
-- Add examples of different scenarios
-- Add separate documentation of complex values such as var.backup_policies
+
+### Retention configuration
+Furthermore the retention configuration options are as follows:
+
+| Name | Type | Description | Default | Required |
+|---|---|---|---|---|
+| daily_backups_retention | `number` | Number of daily backups to retain, must be between 7-9999. Required if backup_frequency is Daily | n/a | Optional |
+| weekly_backups_retention | `number` | Number of weekly backups to retain, must be between 1-9999 | n/a | Optional |
+| weekdays | `list(string)` | The day in the week of backups to retain. Used for weekly retention. E.g. "Monday" or "Friday" | n/a | Optional |
+| monthly_backups_retention | `number` | Number of monthly backups to retain, must be between 1-9999 | n/a | Optional |
+| months_weekdays | `list(string)` | The day in the week of backups to retain. Used for monthly retention configuration | n/a | Optional |
+| months_weeks | `list(string)` | Weeks of the month to retain backup of. Must be First, Second, Third or Last. Used for monthly retention configuration | n/a | Optional |
+| months_days | `list(number)` | The days in the month to retain backups of. Must be between 1-31. Used for monthly retention configuration | n/a | Optional |
+| months_include_last_days | `bool` | Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set | false | Optional |
+| yearly_backups_retention | `number` | Number of yearly backups to retain, must be between 1-9999 | n/a | Optional |
+| yearly_months | `list(string)` | The months of the year to retain backups of. Values most be names of the month with capital case. Used for yearly retention configuration | n/a | Optional |
+| yearly_weekdays | `list(string)`) | The day in the week of backups to retain. Used for yearly retention configuration | n/a | Optional |
+| yearly_weeks | `list(string)` | Weeks of the month to retain backup of. Must be First, Second, Third or Last. Used for yearly retention configuration | n/a | Optional |
+| yearly_days | `list(number)` | The days in the month to retain backups of. Must be between 1-31. Used for monthly retention configuration | n/a | Optional |
+| yearly_include_last_days | `bool` | Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set |  |  |
+|  |  |  |  |  |
