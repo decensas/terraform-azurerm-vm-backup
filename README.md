@@ -118,7 +118,7 @@ No modules.
 | <a name="output_vault"></a> [vault](#output\_vault) | Recovery Services Vault object created by this module. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
-## var.backup_policy
+## var.backup_policies
 
 `var.backup_policy` is a complex structure and require additional documentation.
 The outer layer is a key-value map where the key is the name of the backup policy and its value is a complex object describing the policy and its assignees.
