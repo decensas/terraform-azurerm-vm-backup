@@ -88,7 +88,12 @@ variable "cross_region_restore_enabled" {
 variable "immutability" {
   type        = string
   description = "Whether you want vault to be immutable. Allowed values are: 'Locked', 'Unlocked' or 'Disabled'. Review https://learn.microsoft.com/en-us/azure/backup/backup-azure-immutable-vault-concept?tabs=recovery-services-vault"
-  default     = null
+  default     = "Disabled"
+
+  validation {
+    condition     = contains(["Locked", "Unlocked", "Disabled"], var.immutability)
+    error_message = "var.immutability must be one of 'Locked', 'Unlocked' or 'Disabled'"
+  }
 }
 
 ### Recovery Services Vault identity configuration
@@ -183,37 +188,6 @@ variable "backup_policies" {
       id   = string
     })))
   }))
-}
-
-## Azure Policy configuration so to assign backup policies dynamically 
-variable "enable_dynamic_backup_policy_assignment" {
-  type        = bool
-  description = "Whether to enable dynamic backup policy to VMs using Azure Policy and tags"
-  default     = false
-}
-
-variable "azure_policy_id" {
-  type        = string
-  description = "(Optional) ID of Azure policy to use for automatically assignment of backup policies to VMs based on tags."
-  default     = ""
-}
-
-variable "azure_policy_scope" {
-  type        = map(string)
-  description = "(Optional) What scope to assign an Azure policy to assign backup policies to VMs on and the ID of the scope. The key be one of 'management_group', 'subscription' or 'resource_group' and the value is the ID of the scope"
-  default     = {}
-}
-
-variable "tag_key" {
-  type        = string
-  description = "(Optional) Name of the Azure resource tag key that will be read by Azure policies to decide which backup policy should be applied. The key is the backup policy and the value is the Azure resource tag value. Only used when backup policies should b applied to virtual machines using an Azure policy."
-  default     = "backup policy"
-}
-
-variable "tag_value" {
-  type        = map(string)
-  description = "(Optional) A key-value map correlating which backup policies matches which Azure resource tag. The key is the backup policy and the value is the Azure resource tag value. Only used when backup policies should b applied to virtual machines using an Azure policy."
-  default     = {}
 }
 
 variable "tags" {
