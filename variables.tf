@@ -142,7 +142,7 @@ variable "backup_policies" {
       yearly_include_last_days = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. 
 
     }))
-    protected_virtual_machines = optional(list(object({
+    protected_virtual_machines = optional(map(object({
       name = string
       id   = string
     })))

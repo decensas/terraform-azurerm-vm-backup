@@ -10,7 +10,7 @@ resource "azurerm_recovery_services_vault" "vault" {
   soft_delete_enabled           = var.soft_delete_enabled
 
   dynamic "identity" {
-    for_each = var.encryption_with_cmk || var.public_network_access_enabled ? [""] : []
+    for_each = var.encryption_with_cmk || !var.public_network_access_enabled ? [""] : []
     content {
       type         = var.identity
       identity_ids = var.identity_ids
@@ -92,10 +92,15 @@ resource "azurerm_backup_policy_vm" "backup_policy" {
   }
 }
 
-locals { # Flattens backup policy object to an iterable value -> <vm_name>
+locals {
+  # Flattens backup policy object to an iterable value 
+  # <key>#<policy_name> = {
+  #   vm_id = <vm_id>
+  #   backup_policy_name = <backup_policy_name>
+  # }
   flattened_list_of_vms_and_policies = merge([for policy_name, policy_object in var.backup_policies : {
-    for vm in policy_object.protected_virtual_machines :
-    vm.name => {
+    for key, vm in policy_object.protected_virtual_machines :
+    "${key}#${policy_name}" => {
       vm_id              = vm.id,
       backup_policy_name = policy_name
   } }]...)
