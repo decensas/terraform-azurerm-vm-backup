@@ -16,10 +16,11 @@ See full example [here](./examples/directly-assigned-backup-policies).
 module "backup" {
   source  = "decensas/azure-virtual-machine-backup/azurerm"
   version = "0.1.0"
-
-  resource_group_name = azurerm_resource_group.main.name
-  backup_location     = "westeurope"
+ 
+  resource_group_name = azurerm_resource_group.backup.name
+  location            = azurerm_resource_group.backup.location
   storage_mode_type   = "LocallyRedundant"
+  soft_delete_enabled = false
 
   backup_policies = {
     default_policy = {
@@ -29,10 +30,10 @@ module "backup" {
       instant_restore_retention_days = 10
 
       retention = {
-        weekly_backup_retention = 20 # retains 20 weekly backups at a time
-        weekdays                = "Friday"
+        weekly_backups_retention = 20 # retains 20 weekly backups at a time
+        weekdays                 = ["Friday"]
       }
-      protected_virtual_machine_ids = [azurerm_windows_virtual_machine.main[*]]
+      protected_virtual_machines = [azurerm_windows_virtual_machine.main[1], azurerm_windows_virtual_machine.main[3]]
     }
 
     daily_backup = {
@@ -43,7 +44,7 @@ module "backup" {
         daily_backups_retention = 10 # Retains 10 daily backups at a time
       }
 
-      protected_virtual_machine_ids = [azurerm_windows_virtual_machine.main[2]]
+      protected_virtual_machines = [azurerm_windows_virtual_machine.main[2]]
     }
   }
 

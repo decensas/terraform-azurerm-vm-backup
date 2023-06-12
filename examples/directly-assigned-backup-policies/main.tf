@@ -12,11 +12,10 @@ module "backup" {
   source = "../../"
   #version = "0.1.0"
 
-  soft_delete_enabled = false
-
   resource_group_name = azurerm_resource_group.backup.name
   location            = azurerm_resource_group.backup.location
   storage_mode_type   = "LocallyRedundant"
+  soft_delete_enabled = false
 
   backup_policies = {
     default_policy = {
