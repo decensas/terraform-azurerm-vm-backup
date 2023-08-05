@@ -26,6 +26,7 @@ module "backup" {
     default_policy = {
       backup_time      = "20:00"
       backup_frequency = "Weekly"
+      timezone         = "America/New_York"
 
       instant_restore_retention_days = 10
 
@@ -39,6 +40,7 @@ module "backup" {
     daily_backup = {
       backup_time      = "20:00"
       backup_frequency = "Daily"
+      timezone         = "America/New_York"
 
       retention = {
         daily_backups_retention = 10 # Retains 10 daily backups at a time
@@ -53,6 +55,42 @@ module "backup" {
   }
 }
 ```
+
+### How to selectively enable backup policies on all VMs in a subscription
+
+In specific scenarios, enabling backup for all virtual machines (VMs) might be a priority. However, there could be instances where you'd prefer to exclude certain VMs from the backup process due to various reasons.
+
+First create a list of vms (e.g. in terraform.tfvars) where backup is not necessary:
+
+  `vms_toignore_4backup   = [ "myvm1", "myvm2", "myvm3", ]`
+
+
+Retrieve all the VMs in your subscription
+```
+data "azurerm_resources" "subs" {
+  type = "Microsoft.Compute/virtualMachines"
+}
+```
+
+Create a local variable that contains the list of vms by filtering out unnecessary VMs:
+```
+locals {
+  subs_vms = { for idx, item in data.azurerm_resources.subs.resources :
+    item.name => {
+      name=item.name
+      id=item.id
+    }
+    if ! contains(var.vms_toignore_4backup, item.name)
+  }
+}
+```
+
+Finally assign the protected vms (in the example above):
+
+`protected_virtual_machines = local.subs_vms`
+
+
+
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
