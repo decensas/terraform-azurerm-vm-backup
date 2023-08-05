@@ -26,7 +26,7 @@ module "backup" {
     default_policy = {
       backup_time      = "20:00"
       backup_frequency = "Weekly"
-      timezone         = "America/New_York"
+      timezone         = "Eastern Standard Time"
 
       instant_restore_retention_days = 10
 
@@ -40,7 +40,7 @@ module "backup" {
     daily_backup = {
       backup_time      = "20:00"
       backup_frequency = "Daily"
-      timezone         = "America/New_York"
+      timezone         = "Eastern Standard Time"
 
       retention = {
         daily_backups_retention = 10 # Retains 10 daily backups at a time
