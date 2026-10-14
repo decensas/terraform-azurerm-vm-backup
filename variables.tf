@@ -28,7 +28,7 @@ variable "sku" {
 
 variable "public_network_access_enabled" {
   type        = bool
-  description = "Enable access to Recovery Services Vault from public networks or not. Requires configuration of a Private Endpoint and DNS resolve for backup operations and vault access."
+  description = "Whether the Recovery Services vault is accessible from public networks. Azure VM disk backup and restore do not require a private endpoint; configure private networking for supported workloads and VM file-level recovery."
   default     = false
 }
 
@@ -40,7 +40,7 @@ variable "manage_private_endpoint" {
 
 variable "private_endpoint_subnet_id" {
   type        = string
-  description = "Subnet ID of subnet to deploy Private Endpoint in. Required if public_network_access_enabled is diabled"
+  description = "Subnet ID in which to deploy the private endpoint. Required when manage_private_endpoint is true."
   default     = null
 }
 
@@ -58,14 +58,19 @@ variable "private_dns_zone_group_name" {
 
 variable "private_dns_zone_ids" {
   type        = list(string)
-  description = "A list of private DNS zone IDs to add DNS entry to. Required if var.manage_dns_zone is true"
+  description = "Private DNS zone IDs to associate with the private endpoint. Required when both manage_private_endpoint and manage_dns_zone are true."
   default     = []
 }
 
 variable "soft_delete_enabled" {
   type        = bool
-  description = "Whether to enable soft delete on Recovery Services Vault"
+  description = "Deprecated compatibility input. Azure Backup enforces soft delete and the current AzureRM provider no longer configures it. This value must remain true."
   default     = true
+
+  validation {
+    condition     = var.soft_delete_enabled
+    error_message = "soft_delete_enabled must be true because Azure Backup soft delete is enforced by default."
+  }
 }
 
 variable "storage_mode_type" {
@@ -161,8 +166,8 @@ variable "backup_policies" {
     backup_frequency               = string                  # Frequency of backup, supported values 'Hourly', 'Daily', 'Weekly'
     policy_type                    = optional(string, "V2")  # set to V1 or V2, see [here](https://learn.microsoft.com/en-us/azure/backup/backup-azure-vms-enhanced-policy?tabs=azure-portal)
     instant_restore_retention_days = optional(number)        # Between 1-5 for var.policy_type V1, 1-30 for V2
-    backup_hour_interval           = optional(number)        # Interval of which backup is triggered. Allowed values are: 4, 6, 8 or 12. Used if backup_frequency is set to Hourly.
-    backup_hour_duration           = optional(number)        # Duration of the backup window in hours. Value between 4 and 24. Used if backup_frequency is Hourly. Must be a multiplier of backup_hour_interval
+    backup_hour_interval           = optional(number)        # Interval in hours. Allowed values: 4, 6, 8 or 12. Required for Hourly policies.
+    backup_hour_duration           = optional(number)        # Hourly backup window in hours: 4-24 and a multiple of backup_hour_interval.
     retention = optional(object({
       daily_backups_retention = optional(number) # Number of daily backups to retain, must be between 7-9999. Required if backup_frequency is Daily
 
@@ -182,12 +187,61 @@ variable "backup_policies" {
       yearly_days              = optional(list(number)) # The days in the month to retain backups of. Must be between 1-31. Used for monthly retention configuration
       yearly_include_last_days = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. 
 
-    }))
+    }), {})
     protected_virtual_machines = optional(map(object({
       name = string
       id   = string
-    })))
+    })), {})
   }))
+
+  validation {
+    condition = alltrue([
+      for policy in values(var.backup_policies) : contains(["Hourly", "Daily", "Weekly"], policy.backup_frequency)
+    ])
+    error_message = "Each backup policy backup_frequency must be Hourly, Daily, or Weekly."
+  }
+
+  validation {
+    condition = alltrue([
+      for policy in values(var.backup_policies) : contains(["V1", "V2"], policy.policy_type)
+    ])
+    error_message = "Each backup policy policy_type must be V1 or V2."
+  }
+
+  validation {
+    condition = alltrue([
+      for policy in values(var.backup_policies) : policy.backup_frequency != "Hourly" || try(
+        contains([4, 6, 8, 12], policy.backup_hour_interval) &&
+        policy.backup_hour_duration >= policy.backup_hour_interval &&
+        policy.backup_hour_duration <= 24 &&
+        policy.backup_hour_duration % policy.backup_hour_interval == 0,
+        false
+      )
+    ])
+    error_message = "Hourly policies require an interval of 4, 6, 8, or 12 hours and a duration between 4 and 24 hours that is a multiple of the interval."
+  }
+
+  validation {
+    condition = alltrue([
+      for policy in values(var.backup_policies) : policy.backup_frequency != "Daily" || try(
+        policy.retention.daily_backups_retention >= 7 && policy.retention.daily_backups_retention <= 9999,
+        false
+      )
+    ])
+    error_message = "Daily policies require daily_backups_retention between 7 and 9999."
+  }
+
+  validation {
+    condition = alltrue([
+      for policy in values(var.backup_policies) : policy.backup_frequency != "Weekly" || try(
+        policy.retention.weekly_backups_retention >= 1 &&
+        policy.retention.weekly_backups_retention <= 9999 &&
+        length(policy.retention.weekdays) > 0,
+        false
+      )
+    ])
+    error_message = "Weekly policies require weekly_backups_retention between 1 and 9999 and at least one retention weekday."
+  }
 }
 
 variable "tags" {

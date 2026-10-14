@@ -12,11 +12,9 @@ module "backup" {
   source  = "decensas/vm-backup/azurerm"
   version = "~>0.1"
 
-  resource_group_name           = azurerm_resource_group.backup.name
-  location                      = azurerm_resource_group.backup.location
-  storage_mode_type             = "LocallyRedundant"
-  soft_delete_enabled           = false
-  public_network_access_enabled = true
+  resource_group_name = azurerm_resource_group.backup.name
+  location            = azurerm_resource_group.backup.location
+  storage_mode_type   = "LocallyRedundant"
 
   backup_policies = {
     default_policy = {
