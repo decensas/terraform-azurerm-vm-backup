@@ -1,6 +1,16 @@
 # azurerm-azure-vm-backup
 Terraform module for management of Azure Virtual Machine backup. Supports creating Recovery Services Vault, multiple backup policies and assigning backup policies to specific VMs.
 
+## Security and networking
+
+Azure Backup enforces soft delete by default. The legacy `soft_delete_enabled` input remains for compatibility and only accepts `true`; it is not sent to the current AzureRM provider.
+
+The vault defaults to `public_network_access_enabled = false`. Azure VM disk backup and disk restore do not require a private endpoint. File-level recovery from a vault configured with private endpoints must run from a connected virtual network with working private DNS. Private endpoints are also needed for some other Recovery Services workloads. See [Microsoft's supported private endpoint scenarios](https://learn.microsoft.com/azure/backup/backup-azure-private-endpoints-concept#recommended-and-supported-scenarios).
+
+This module does not create Resource Guard/Multi-User Authorization or lock vault immutability. Plan these controls for production vaults before protecting workloads; locking immutability is irreversible.
+
+The AzureRM 5.x provider requires a subscription ID when authenticating with Azure CLI. Set `ARM_SUBSCRIPTION_ID` in the environment used by Terraform.
+
 ## Examples
 Here are some short examples with referenced resources cut out. See [examples](./examples)-directory for full examples.
 
@@ -58,15 +68,15 @@ module "backup" {
 ## Requirements
 
 | Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.2.8 |
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 3.0 |
+| ---- | ------- |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 5.0 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 3.0 |
+| ---- | ------- |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 5.0 |
 
 ## Modules
 
@@ -75,7 +85,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [azurerm_backup_policy_vm.backup_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_vm) | resource |
 | [azurerm_backup_protected_vm.backup_vms](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_protected_vm) | resource |
 | [azurerm_private_endpoint.backup](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) | resource |
@@ -84,8 +94,8 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_backup_policies"></a> [backup\_policies](#input\_backup\_policies) | A map of backup policy objects where the key is the name of the policy. [Review](#var.backup\_policies) for comprehensive documentation | <pre>map(object({<br>    timezone                       = optional(string, "UTC") # [Allowed values](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/)<br>    backup_time                    = string                  # Time of day to perform backup in 24h format, e.g. 23:00<br>    backup_frequency               = string                  # Frequency of backup, supported values 'Hourly', 'Daily', 'Weekly'<br>    policy_type                    = optional(string, "V2")  # set to V1 or V2, see [here](https://learn.microsoft.com/en-us/azure/backup/backup-azure-vms-enhanced-policy?tabs=azure-portal)<br>    instant_restore_retention_days = optional(number)        # Between 1-5 for var.policy_type V1, 1-30 for V2<br>    backup_hour_interval           = optional(number)        # Interval of which backup is triggered. Allowed values are: 4, 6, 8 or 12. Used if backup_frequency is set to Hourly.<br>    backup_hour_duration           = optional(number)        # Duration of the backup window in hours. Value between 4 and 24. Used if backup_frequency is Hourly. Must be a multiplier of backup_hour_interval<br>    retention = optional(object({<br>      daily_backups_retention = optional(number) # Number of daily backups to retain, must be between 7-9999. Required if backup_frequency is Daily<br><br>      weekly_backups_retention = optional(number)       # Number of weekly backups to retain, must be between 1-9999. <br>      weekdays                 = optional(list(string)) # The day in the week of backups to retain. Used for weekly retention.<br><br>      monthly_backups_retention = optional(number)       # Number of monthly backups to retain, must be between 1-9999. <br>      months_weekdays           = optional(list(string)) # The day in the week of backups to retain. Used for monthly retention configuration<br>      months_weeks              = optional(list(string)) # Weeks of the month to retain backup of. Must be First, Second, Third or Last. Used for monthly retention configuration<br>      months_days               = optional(list(number)) # The days in the month to retain backups of. Must be between 1-31. Used for monthly retenion configuration<br>      months_include_last_days  = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. <br><br>      yearly_backups_retention = optional(number)       # Number of yearly backups to retain, must be between 1-9999. <br>      yearly_months            = optional(list(string)) # The months of the year to retain backups of. Values most be names of the month with capital case. Used for yearly retention configuration<br>      yearly_weekdays          = optional(list(string)) # The day in the week of backups to retain. Used for yearly retention configuration<br>      yearly_weeks             = optional(list(string)) # Weeks of the month to retain backup of. Must be First, Second, Third or Last. Used for yearly retention configuration<br>      yearly_days              = optional(list(number)) # The days in the month to retain backups of. Must be between 1-31. Used for monthly retention configuration<br>      yearly_include_last_days = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. <br><br>    }))<br>    protected_virtual_machines = optional(map(object({<br>      name = string<br>      id   = string<br>    })))<br>  }))</pre> | n/a | yes |
+| ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_backup_policies"></a> [backup\_policies](#input\_backup\_policies) | A map of backup policy objects where the key is the name of the policy. [Review](#var.backup\_policies) for comprehensive documentation | <pre>map(object({<br/>    timezone                       = optional(string, "UTC") # [Allowed values](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/)<br/>    backup_time                    = string                  # Time of day to perform backup in 24h format, e.g. 23:00<br/>    backup_frequency               = string                  # Frequency of backup, supported values 'Hourly', 'Daily', 'Weekly'<br/>    policy_type                    = optional(string, "V2")  # set to V1 or V2, see [here](https://learn.microsoft.com/en-us/azure/backup/backup-azure-vms-enhanced-policy?tabs=azure-portal)<br/>    instant_restore_retention_days = optional(number)        # Between 1-5 for var.policy_type V1, 1-30 for V2<br/>    backup_hour_interval           = optional(number)        # Interval in hours. Allowed values: 4, 6, 8 or 12. Required for Hourly policies.<br/>    backup_hour_duration           = optional(number)        # Hourly backup window in hours: 4-24 and a multiple of backup_hour_interval.<br/>    retention = optional(object({<br/>      daily_backups_retention = optional(number) # Number of daily backups to retain, must be between 7-9999. Required if backup_frequency is Daily<br/><br/>      weekly_backups_retention = optional(number)       # Number of weekly backups to retain, must be between 1-9999. <br/>      weekdays                 = optional(list(string)) # The day in the week of backups to retain. Used for weekly retention.<br/><br/>      monthly_backups_retention = optional(number)       # Number of monthly backups to retain, must be between 1-9999. <br/>      months_weekdays           = optional(list(string)) # The day in the week of backups to retain. Used for monthly retention configuration<br/>      months_weeks              = optional(list(string)) # Weeks of the month to retain backup of. Must be First, Second, Third or Last. Used for monthly retention configuration<br/>      months_days               = optional(list(number)) # The days in the month to retain backups of. Must be between 1-31. Used for monthly retenion configuration<br/>      months_include_last_days  = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. <br/><br/>      yearly_backups_retention = optional(number)       # Number of yearly backups to retain, must be between 1-9999. <br/>      yearly_months            = optional(list(string)) # The months of the year to retain backups of. Values most be names of the month with capital case. Used for yearly retention configuration<br/>      yearly_weekdays          = optional(list(string)) # The day in the week of backups to retain. Used for yearly retention configuration<br/>      yearly_weeks             = optional(list(string)) # Weeks of the month to retain backup of. Must be First, Second, Third or Last. Used for yearly retention configuration<br/>      yearly_days              = optional(list(number)) # The days in the month to retain backups of. Must be between 1-31. Used for monthly retention configuration<br/>      yearly_include_last_days = optional(bool, false)  # Whether to include last day of month, used if either months_weekdays, months_weeks or months_days is set. <br/><br/>    }), {})<br/>    protected_virtual_machines = optional(map(object({<br/>      name = string<br/>      id   = string<br/>    })), {})<br/>  }))</pre> | n/a | yes |
 | <a name="input_cross_region_restore_enabled"></a> [cross\_region\_restore\_enabled](#input\_cross\_region\_restore\_enabled) | Whether to enable cross region restore for Recovery Services Vault. For this to be true var.storage\_mode\_type must be set to GeoRedundant | `bool` | `false` | no |
 | <a name="input_encryption_with_cmk"></a> [encryption\_with\_cmk](#input\_encryption\_with\_cmk) | Whether to manage encryption using Customer Managed Key (CMK) provisioned with var.key\_vault\_key\_id. Relevant documentation: https://learn.microsoft.com/en-us/azure/backup/backup-encryption | `bool` | `false` | no |
 | <a name="input_identity"></a> [identity](#input\_identity) | What identity to enable for the Recovery Service Vault. The identity is used when using Customer Managed Key (CMK for encryption) or accessing the vault using Private Endpoints. Available options are: 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'. Required if encryption\_with\_cmk is enabled. | `string` | `"SystemAssigned"` | no |
@@ -97,15 +107,15 @@ No modules.
 | <a name="input_manage_dns_zone"></a> [manage\_dns\_zone](#input\_manage\_dns\_zone) | Whether to manage private DNS zone or not for Recovery Services Vault | `bool` | `true` | no |
 | <a name="input_manage_private_endpoint"></a> [manage\_private\_endpoint](#input\_manage\_private\_endpoint) | Whether this module will manage a private endpoint for the Recovery Service Vault | `bool` | `false` | no |
 | <a name="input_private_dns_zone_group_name"></a> [private\_dns\_zone\_group\_name](#input\_private\_dns\_zone\_group\_name) | Name of Azure Private DNS zone group for resolving private endpoint. Only relevant if var.private\_endpoint\_subnet\_id is set | `string` | `"backup-dns-zone"` | no |
-| <a name="input_private_dns_zone_ids"></a> [private\_dns\_zone\_ids](#input\_private\_dns\_zone\_ids) | A list of private DNS zone IDs to add DNS entry to. Required if var.manage\_dns\_zone is true | `list(string)` | `[]` | no |
-| <a name="input_private_endpoint_subnet_id"></a> [private\_endpoint\_subnet\_id](#input\_private\_endpoint\_subnet\_id) | Subnet ID of subnet to deploy Private Endpoint in. Required if public\_network\_access\_enabled is diabled | `string` | `null` | no |
-| <a name="input_public_network_access_enabled"></a> [public\_network\_access\_enabled](#input\_public\_network\_access\_enabled) | Enable access to Recovery Services Vault from public networks or not. Requires configuration of a Private Endpoint and DNS resolve for backup operations and vault access. | `bool` | `false` | no |
+| <a name="input_private_dns_zone_ids"></a> [private\_dns\_zone\_ids](#input\_private\_dns\_zone\_ids) | Private DNS zone IDs to associate with the private endpoint. Required when both manage\_private\_endpoint and manage\_dns\_zone are true. | `list(string)` | `[]` | no |
+| <a name="input_private_endpoint_subnet_id"></a> [private\_endpoint\_subnet\_id](#input\_private\_endpoint\_subnet\_id) | Subnet ID in which to deploy the private endpoint. Required when manage\_private\_endpoint is true. | `string` | `null` | no |
+| <a name="input_public_network_access_enabled"></a> [public\_network\_access\_enabled](#input\_public\_network\_access\_enabled) | Whether the Recovery Services vault is accessible from public networks. Azure VM disk backup and restore do not require a private endpoint; configure private networking for supported workloads and VM file-level recovery. | `bool` | `false` | no |
 | <a name="input_recovery_services_vault_name"></a> [recovery\_services\_vault\_name](#input\_recovery\_services\_vault\_name) | Name of Recovery Services Vault where backups will be stored. | `string` | `"backup-rsv"` | no |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | The name of the resource group in which to deploy the backup resources. | `string` | n/a | yes |
 | <a name="input_rsv_alerts_for_all_job_failures_enabled"></a> [rsv\_alerts\_for\_all\_job\_failures\_enabled](#input\_rsv\_alerts\_for\_all\_job\_failures\_enabled) | Enabling/Disabling built-in Azure Monitor alerts for security scenarios and job failure scenarios. More details could be found [here](https://learn.microsoft.com/en-us/azure/backup/monitoring-and-alerts-overview). | `bool` | `true` | no |
 | <a name="input_rsv_alerts_for_critical_operation_failures_enabled"></a> [rsv\_alerts\_for\_critical\_operation\_failures\_enabled](#input\_rsv\_alerts\_for\_critical\_operation\_failures\_enabled) | Enabling/Disabling alerts from the older (classic alerts) solution. More details could be found [here](https://learn.microsoft.com/en-us/azure/backup/monitoring-and-alerts-overview). | `bool` | `true` | no |
 | <a name="input_sku"></a> [sku](#input\_sku) | SKU of Recovery Services Vault, either 'Standard' or 'RS0'. | `string` | `"Standard"` | no |
-| <a name="input_soft_delete_enabled"></a> [soft\_delete\_enabled](#input\_soft\_delete\_enabled) | Whether to enable soft delete on Recovery Services Vault | `bool` | `true` | no |
+| <a name="input_soft_delete_enabled"></a> [soft\_delete\_enabled](#input\_soft\_delete\_enabled) | Deprecated compatibility input. Azure Backup enforces soft delete and the current AzureRM provider no longer configures it. This value must remain true. | `bool` | `true` | no |
 | <a name="input_storage_mode_type"></a> [storage\_mode\_type](#input\_storage\_mode\_type) | Storage type of the Recovery Services Vault. Must be one of 'GeoRedundant', 'LocallyRedundant' or 'ZoneRedundant'. | `string` | `"GeoRedundant"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | (Optional) Tags that will be applied to all deployed resources. | `map(string)` | `{}` | no |
 | <a name="input_user_assigned_identity_id_encryption"></a> [user\_assigned\_identity\_id\_encryption](#input\_user\_assigned\_identity\_id\_encryption) | User assigned ID to be used for additional encryption. Only relevant if var.encryption\_with\_cmk is enabled. System Assigned Identity for the Recovery Services Vault is used if no value is provided. | `string` | `null` | no |
@@ -113,7 +123,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_policy"></a> [policy](#output\_policy) | A map of backup policy objects created by this module. |
 | <a name="output_vault"></a> [vault](#output\_vault) | Recovery Services Vault object created by this module. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

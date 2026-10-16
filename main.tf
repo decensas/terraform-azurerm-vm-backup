@@ -7,7 +7,6 @@ resource "azurerm_recovery_services_vault" "vault" {
   public_network_access_enabled = var.public_network_access_enabled
   storage_mode_type             = var.storage_mode_type
   cross_region_restore_enabled  = var.cross_region_restore_enabled
-  soft_delete_enabled           = var.soft_delete_enabled
   immutability                  = var.immutability
 
   dynamic "identity" {
@@ -72,8 +71,8 @@ resource "azurerm_backup_policy_vm" "backup_policy" {
   backup {
     frequency     = each.value.backup_frequency
     time          = each.value.backup_time
-    hour_interval = each.value.backup_frequency == "Daily" ? each.value.backup_hour_interval : null
-    hour_duration = each.value.backup_frequency == "Daily" ? each.value.backup_hour_duration : null
+    hour_interval = each.value.backup_frequency == "Hourly" ? each.value.backup_hour_interval : null
+    hour_duration = each.value.backup_frequency == "Hourly" ? each.value.backup_hour_duration : null
     weekdays      = each.value.backup_frequency == "Weekly" ? each.value.retention.weekdays : null
   }
 
@@ -99,7 +98,7 @@ resource "azurerm_backup_policy_vm" "backup_policy" {
       weekdays          = each.value.retention.months_weekdays
       weeks             = each.value.retention.months_weeks
       days              = each.value.retention.months_days
-      include_last_days = each.value.retention.include_last_days
+      include_last_days = each.value.retention.months_include_last_days
     }
   }
 
@@ -111,7 +110,7 @@ resource "azurerm_backup_policy_vm" "backup_policy" {
       weekdays          = each.value.retention.yearly_weekdays
       weeks             = each.value.retention.yearly_weeks
       days              = each.value.retention.yearly_days
-      include_last_days = each.value.retention.include_last_days
+      include_last_days = each.value.retention.yearly_include_last_days
     }
   }
 }
@@ -122,7 +121,7 @@ locals {
   #   vm_id = <vm_id>
   #   backup_policy_name = <backup_policy_name>
   # }
-  flattened_list_of_vms_and_policies = merge([for policy_name, policy_object in var.backup_policies : {
+  flattened_list_of_vms_and_policies = merge({}, [for policy_name, policy_object in var.backup_policies : {
     for key, vm in policy_object.protected_virtual_machines :
     "${key}#${policy_name}" => {
       vm_id              = vm.id,
